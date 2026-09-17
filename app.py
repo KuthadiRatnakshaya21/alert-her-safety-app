@@ -3,7 +3,7 @@ import pandas as pd
 import datetime
 import os
 import base64
-from gtts import gtts
+from gtts import gTTS
 from risk_engine import RISK_ZONES, calculate_risk
 
 # Component verification safety boundaries
