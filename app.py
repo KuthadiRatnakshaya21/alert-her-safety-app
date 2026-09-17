@@ -118,7 +118,7 @@ for s in st.session_state.stories:
         s["archived"] = True
         archived_profile_stories.append(s)
 # ==============================================================================
-# TAB 1: RISK BEFORE YOU GO (PART 1 OF 2)
+# TAB 1: RISK BEFORE YOU GO
 # ==============================================================================
 with tab1:
     st.header("Location Safety Evaluation & Live Incidents")
@@ -189,23 +189,19 @@ with tab1:
             folium.Marker([lat, lon], popup=f"{eval_zone}: {res['level']} Risk").add_to(m)
             st_folium(m, height=220, width=420, key=f"map_{eval_zone}")
 
-# ==============================================================================
-# TAB 1: RISK BEFORE YOU GO (PART 2 OF 2)
-# ==============================================================================
     with col_right:
         st.subheader("🚨 Places on Alert")
         st.caption("Live, user-written alert notes linked to critical hot spots.")
         
         if active_live_stories:
             for story in active_live_stories:
-    safe_quote = story.get('quote', f'"{story.get("issue", "Report")}" — Community Alert')
-    st.markdown(f"""
-    <div class="quote-card">
-        <div class="quote-title">📍 {story.get('location', 'General Delhi')}</div>
-        <div class="quote-body">{safe_quote}</div>
-    </div>
-    """, unsafe_allow_html=True)
-
+                safe_quote = story.get('quote', f'"{story.get("issue", "Report")}" — Community Alert')
+                st.markdown(f"""
+                <div class="quote-card">
+                    <div class="quote-title">📍 {story.get('location', 'General Delhi')}</div>
+                    <div class="quote-body">{safe_quote}</div>
+                </div>
+                """, unsafe_allow_html=True)
         else:
             st.markdown("""
             <div style="text-align:center; padding: 20px; color:#a0aec0; border: 1px dashed #cbd5e0; border-radius:8px;">
@@ -283,9 +279,8 @@ with tab1:
             st.info("Your historical personal archive database node profile log contains zero saved entries.")
 
     st.markdown(f'<div class="disclaimer-style">{DISCLAIMER_TEXT}</div>', unsafe_allow_html=True)
-
 # ==============================================================================
-# TAB 2: WHAT-IF SIMULATOR (PART 1 OF 2)
+# TAB 2: WHAT-IF SIMULATOR
 # ==============================================================================
 with tab2:
     st.header("Temporal Multi-Variable Simulation Matrix")
@@ -299,10 +294,7 @@ with tab2:
     
     badge_style = f"badge-{current_res['level'].lower()}"
     st.markdown(f'<div class="risk-badge {badge_style}">Simulated State: {current_res["level"]} Risk Footprint ({current_res["score"]}/100)</div>', unsafe_allow_html=True)
-
-# ==============================================================================
-# TAB 2: WHAT-IF SIMULATOR (PART 2 OF 2)
-# ==============================================================================
+    
     hours_axis = list(range(24))
     scores_axis = [calculate_risk(sim_zone, h, sim_weekend, len(matching_stories_sim))["score"] for h in hours_axis]
     chart_data = pd.DataFrame({"Hour of Day": hours_axis, "Risk Score": scores_axis})
@@ -327,7 +319,7 @@ with tab2:
     st.markdown(f'<div class="disclaimer-style">{DISCLAIMER_TEXT}</div>', unsafe_allow_html=True)
 
 # ==============================================================================
-# TAB 3: PRETEND CALL (COMPLETE ARCHITECTURE NODE)
+# TAB 3: PRETEND CALL
 # ==============================================================================
 with tab3:
     st.header("Situational De-escalation Virtual Check-In Screen")
@@ -418,4 +410,5 @@ with tab3:
         if st.button("Disconnect Call Overlay Frame", key="disconnect_call_btn"):
             st.session_state.active_call = None
             st.rerun()
+
 
