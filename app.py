@@ -198,12 +198,14 @@ with tab1:
         
         if active_live_stories:
             for story in active_live_stories:
-                st.markdown(f"""
-                <div class="quote-card">
-                    <div class="quote-title">📍 {story['location']}</div>
-                    <div class="quote-body">{story['quote']}</div>
-                </div>
-                """, unsafe_allow_html=True)
+    safe_quote = story.get('quote', f'"{story.get("issue", "Report")}" — Community Alert')
+    st.markdown(f"""
+    <div class="quote-card">
+        <div class="quote-title">📍 {story.get('location', 'General Delhi')}</div>
+        <div class="quote-body">{safe_quote}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
         else:
             st.markdown("""
             <div style="text-align:center; padding: 20px; color:#a0aec0; border: 1px dashed #cbd5e0; border-radius:8px;">
