@@ -173,15 +173,11 @@ for s in st.session_state.stories:
         archived_profile_stories.append(s)
 
 tab1, tab2, tab3 = st.tabs(["📍 Risk Before You Go", "📉 What-If Simulator", "📞 Pretend Call"])
-
-
 # ==============================================================================
-# TAB 1: RISK BEFORE YOU GO
+# TAB 1: RISK BEFORE YOU GO (PART 1 OF 2)
 # ==============================================================================
-tab1, tab2, tab3 = st.tabs(["📍 Risk Before You Go", "📉 What-If Simulator", "📞 Pretend Call"])
-            archived_profile_stories.append(s)
-    
- st.header("Location Safety Evaluation & Live Incidents")
+with tab1:
+    st.header("Location Safety Evaluation & Live Incidents")
     
     col_left, col_mid, col_right = st.columns([2, 2, 1.2])
     
@@ -248,7 +244,9 @@ tab1, tab2, tab3 = st.tabs(["📍 Risk Before You Go", "📉 What-If Simulator",
             m = folium.Map(location=[lat, lon], zoom_start=14)
             folium.Marker([lat, lon], popup=f"{eval_zone}: {res['level']} Risk").add_to(m)
             st_folium(m, height=220, width=420, key=f"map_{eval_zone}")
-
+# ==============================================================================
+# TAB 1: RISK BEFORE YOU GO (PART 2 OF 2)
+# ==============================================================================
     with col_right:
         st.subheader("🚨 Places on Alert")
         st.caption("Live, user-written alert notes linked to critical hot spots.")
@@ -343,8 +341,6 @@ tab1, tab2, tab3 = st.tabs(["📍 Risk Before You Go", "📉 What-If Simulator",
             st.info("Your historical personal archive database node profile log contains zero saved entries.")
 
     st.markdown(f'<div class="disclaimer-style">{DISCLAIMER_TEXT}</div>', unsafe_allow_html=True)
-
-
 # ==============================================================================
 # TAB 2: WHAT-IF SIMULATOR
 # ==============================================================================
@@ -383,7 +379,6 @@ with tab2:
         st.info("💡 Selected timestamp frame corresponds to the absolute mathematical lowest baseline for this sector.")
         
     st.markdown(f'<div class="disclaimer-style">{DISCLAIMER_TEXT}</div>', unsafe_allow_html=True)
-
 # ==============================================================================
 # TAB 3: PRETEND CALL
 # ==============================================================================
@@ -476,5 +471,6 @@ with tab3:
         if st.button("Disconnect Call Overlay Frame", key="disconnect_call_btn"):
             st.session_state.active_call = None
             st.rerun()
+
 
 
