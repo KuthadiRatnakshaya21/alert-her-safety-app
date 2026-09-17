@@ -219,20 +219,25 @@ with tab1:
             with story_cols[idx]:
                 st.markdown(f"""
                 <div class="story-container">
-                    <div class="story-bubble">{story['avatar']}</div>
-                    <div style="margin-top:5px;"><span style="color:#e53e3e; font-weight:800;">● LIVE</span> <b>{story['location']}</b></div>
+                    <div class="story-bubble">{story.get('avatar', '⚠️')}</div>
+                    <div style="margin-top:5px;"><span style="color:#e53e3e; font-weight:800;">● LIVE</span> <b>{story.get('location', 'General Delhi')}</b></div>
                 </div>
                 """, unsafe_allow_html=True)
                 
                 with st.popover("⚙️ Manage Story", use_container_width=True):
                     st.markdown("Edit Info Details:")
-                    story["location"] = st.text_input("Tag Location", value=story["location"], key=f"edit_loc_{story['id']}")
-                    story["issue"] = st.text_area("Issue Description", value=story["issue"], key=f"edit_iss_{story['id']}")
-                    story["quote"] = st.text_input("Public Wall Quote Note", value=story["quote"], key=f"edit_qte_{story['id']}")
+                    # SAFE GETS IMPLEMENTED HERE BELOW TO PREVENT CACHE KEYERROR CRASHES
+                    current_loc = story.get("location", "General Delhi")
+                    current_iss = story.get("issue", "")
+                    current_qte = story.get("quote", "")
                     
-                    if st.button("🗄️ Archive to Profile", key=f"arch_btn_{story['id']}", use_container_width=True):
+                    story["location"] = st.text_input("Tag Location", value=current_loc, key=f"edit_loc_{story.get('id', idx)}")
+                    story["issue"] = st.text_area("Issue Description", value=current_iss, key=f"edit_iss_{story.get('id', idx)}")
+                    story["quote"] = st.text_input("Public Wall Quote Note", value=current_qte, key=f"edit_qte_{story['id']}")
+                    
+                    if st.button("🗄️ Archive to Profile", key=f"arch_btn_{story.get('id', idx)}", use_container_width=True):
                         for s_item in st.session_state.stories:
-                            if s_item["id"] == story["id"]:
+                            if s_item.get("id") == story.get("id"):
                                 s_item["archived"] = True
                         st.success("Story moved safely to profile storage.")
                         st.rerun()
@@ -260,18 +265,18 @@ with tab1:
                     st.markdown(f"""
                     <div style="text-align:center; padding:15px; background-color:#edf2f7; border-radius:12px; margin:5px;">
                         <span style="font-size:2rem;">📁</span>
-                        <div style="font-weight:bold; font-size:0.9rem; margin-top:2px;">{a_story['location']}</div>
+                        <div style="font-weight:bold; font-size:0.9rem; margin-top:2px;">{a_story.get('location', 'General Delhi')}</div>
                         <div style="font-size:0.75rem; color:#718096;">Archived Logs</div>
                     </div>
                     """, unsafe_allow_html=True)
                     
-                    with st.popover("Open Logs", key=f"pop_arch_{a_story['id']}", use_container_width=True):
-                        st.write(f"Historical Target Locality: {a_story['location']}")
-                        st.write(f"Logged Anomaly Condition: {a_story['issue']}")
-                        st.write(f"Stored Public Alert Quote: {a_story['quote']}")
-                        if st.button("Unarchive / Bring Live", key=f"unarch_{a_story['id']}"):
+                    with st.popover("Open Logs", key=f"pop_arch_{a_story.get('id', a_idx)}", use_container_width=True):
+                        st.write(f"Historical Target Locality: {a_story.get('location', 'General Delhi')}")
+                        st.write(f"Logged Anomaly Condition: {a_story.get('issue', '')}")
+                        st.write(f"Stored Public Alert Quote: {a_story.get('quote', '')}")
+                        if st.button("Unarchive / Bring Live", key=f"unarch_{a_story.get('id', a_idx)}"):
                             for s_item in st.session_state.stories:
-                                if s_item["id"] == a_story["id"]:
+                                if s_item.get("id") == a_story.get("id"):
                                     s_item["archived"] = False
                                     s_item["timestamp"] = datetime.datetime.now()
                             st.rerun()
@@ -279,6 +284,7 @@ with tab1:
             st.info("Your historical personal archive database node profile log contains zero saved entries.")
 
     st.markdown(f'<div class="disclaimer-style">{DISCLAIMER_TEXT}</div>', unsafe_allow_html=True)
+
 # ==============================================================================
 # TAB 2: WHAT-IF SIMULATOR
 # ==============================================================================
