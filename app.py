@@ -300,7 +300,7 @@ with tab1:
                         st.rerun()
     else:
         blank_cols = st.columns(4)
-        with blank_cols:
+        with blank_cols[0]:
             st.markdown("""
             <div class="story-container">
                 <div class="story-bubble-empty">👤</div>
@@ -308,10 +308,10 @@ with tab1:
                 <span style="font-size:0.75rem; color:#a0aec0;">Feed Clear</span>
             </div>
             """, unsafe_allow_html=True)
-        with blank_cols:
+        with blank_cols[1]:
             st.caption("💡 No Incidents Flagged: The crowdsourced story feed layer is currently empty. Use the Chatbot layout on the left column to log an issue and initiate your location's first visual safety indicator ring token.")
 
-        with st.expander("👤 User Safety Profile & Archived Stories Locker"):
+    with st.expander("👤 User Safety Profile & Archived Stories Locker"):
         st.markdown("#### Your Saved / Historical Archive Registry")
         st.caption("Contains citizen safety stories that have passed the 48-hour live expiration threshold, or were manually saved by your session profile framework.")
 
@@ -345,13 +345,11 @@ with tab1:
                                 if s_item.get("id") == a_story.get("id"):
                                     s_item["archived"] = False
                                     s_item["timestamp"] = datetime.datetime.now()
-
                             st.rerun()
-
         else:
             st.info("Your historical personal archive database node profile log contains zero saved entries.")
 
- st.markdown(f'<div class="disclaimer-style">Disclaimer: The safety score and operational risk calculator tools computed by this application are derived strictly from historical crime metrics, geographical reporting trends, and crowd-sourced user inputs. They do not constitute personalized security guarantees or reflect live real-time crime tracking.</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="disclaimer-style">Disclaimer: The safety score and operational risk calculator tools computed by this application are derived strictly from historical crime metrics, geographical reporting trends, and crowd-sourced user inputs. They do not constitute personalized security guarantees or reflect live real-time crime tracking.</div>', unsafe_allow_html=True)
 
 
 # ==============================================================================
@@ -485,4 +483,3 @@ with tab3:
         if st.button("Disconnect Call Overlay Frame", key="disconnect_call_btn"):
             st.session_state.active_call = None
             st.rerun()
-
