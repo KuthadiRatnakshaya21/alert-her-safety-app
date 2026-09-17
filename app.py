@@ -337,10 +337,10 @@ with tab1:
                                     s_item["archived"] = False
                                     s_item["timestamp"] = datetime.datetime.now()
                             st.rerun()
-        else:
-            st.info("Your historical personal archive database node profile log contains zero saved entries.")
+           else:
+        st.info("Your historical personal archive database node profile log contains zero saved entries.")
 
-   st.markdown(f'<div class="disclaimer-style">Disclaimer: The safety score and operational risk calculator tools computed by this application are derived strictly from historical crime metrics, geographical reporting trends, and crowd-sourced user inputs. They do not constitute personalized security guarantees or reflect live real-time crime tracking.</div>', unsafe_allow_html=True)
+st.markdown(f'<div class="disclaimer-style">Disclaimer: The safety score and operational risk calculator tools computed by this application are derived strictly from historical crime metrics, geographical reporting trends, and crowd-sourced user inputs. They do not constitute personalized security guarantees or reflect live real-time crime tracking.</div>', unsafe_allow_html=True)
 
 # ==============================================================================
 # TAB 2: WHAT-IF SIMULATOR
