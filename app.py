@@ -15,19 +15,20 @@ st.set_page_config(page_title="ALERT HER", page_icon="🛡️", layout="wide")
 
 # --- INITIALIZE CROWD STORY MEMORY STATE METRIC SYSTEM ---
 if "stories" not in st.session_state:
-    # Grounding initial entries with explicit historical timestamps to verify 48h tracking parameters
     now_time = datetime.datetime.now()
     st.session_state.stories = [
         {
             "id": 101, "location": "ITO", "issue": "Severe streetlight failure along metro access corridor.",
             "quote": "Extremely dark stretch near the main entry gate—please avoid walking solo.",
-            "timestamp": now_time - datetime.timedelta(hours=4), "avatar": "⚠️", "archived": False
+            "timestamp": now_time - datetime.timedelta(minutes=10), "avatar": "⚠️", "archived": False
         },
         {
             "id": 102, "location": "Sultanpuri", "issue": "Rowdy assembly flagged near market square corridors.",
             "quote": "Unregulated groups loitering near narrow lanes. Take the bypass highway route.",
-            "timestamp": now_time - datetime.timedelta(hours=12), "avatar": "🚨", "archived": False
+            "timestamp": now_time - datetime.timedelta(minutes=45), "avatar": "🚨", "archived": False
         }
+    ]
+
     ]
 
 if "contacts" not in st.session_state:
@@ -43,22 +44,25 @@ if "next_story_id" not in st.session_state: st.session_state.next_story_id = 103
 if "active_call" not in st.session_state: st.session_state.active_call = None
 
 # --- GLOBAL STYLES & INLINE REPRODUCED INSTAGRAM REPRODUCTION CSS ---
-st.markdown("""
-<style>
-    .main-title { font-size: 2.6rem; font-weight: 800; color: #e53e3e; margin-bottom: 0px; }
-    .tagline { font-size: 1.1rem; color: #4a5568; margin-bottom: 25px; font-style: italic; }
-    .risk-badge {
-        padding: 12px 24px; border-radius: 8px; font-weight: bold; font-size: 1.2rem;
-        display: inline-block; color: white; text-align: center; margin-bottom: 15px;
-    }
-    .badge-low { background-color: #2f9e44; }
-    .badge-moderate { background-color: #dd8c2b; }
-    .badge-high {
-        background-color: #e53e3e; box-shadow: 0 0 0 0 rgba(229, 62, 62, 1);
-        animation: pulse-red 2s infinite;
-    }
-    @keyframes pulse-red {
-        0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(229, 62, 62, 0.7); }
+# --- LINES 47-62 ---
+current_time_marker = datetime.datetime.now()
+active_live_stories = []
+archived_profile_stories = []
+
+for s in st.session_state.stories:
+    # Ensure any accidental string timestamp values from old sessions do not cause a crash
+    if isinstance(s["timestamp"], str):
+        s["timestamp"] = datetime.datetime.now()
+        
+    time_delta = current_time_marker - s["timestamp"]
+    if s.get("archived", False):
+        archived_profile_stories.append(s)
+    elif time_delta.total_seconds() < (48 * 3600):
+        active_live_stories.append(s)
+    else:
+        s["archived"] = True
+        archived_profile_stories.append(s)
+
         70% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(229, 62, 62, 0); }
         100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(229, 62, 62, 0); }
     }
