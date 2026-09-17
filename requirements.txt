@@ -1,5 +1,6 @@
 streamlit
-numpy
-scikit-learn
-scikit-optimize
-matplotlib
+streamlit-folium
+folium
+gTTS
+pandas
+
