@@ -13,11 +13,21 @@ except ImportError:
 
 st.set_page_config(page_title="ALERT HER", page_icon="🛡️", layout="wide")
 
-# --- DATA STATE MEMORY LAYERS INITIALIZATION ---
+# --- INITIALIZE CROWD STORY MEMORY STATE METRIC SYSTEM ---
 if "stories" not in st.session_state:
+    # Grounding initial entries with explicit historical timestamps to verify 48h tracking parameters
+    now_time = datetime.datetime.now()
     st.session_state.stories = [
-        {"timestamp": "10 Mins Ago", "location": "ITO", "issue": "Broken street lights near metro gate 2, deserted stretch.", "avatar": "⚠️"},
-        {"timestamp": "45 Mins Ago", "location": "Sultanpuri", "issue": "Heavy crowding and rowdy groups gathered near market area.", "avatar": "🚨"}
+        {
+            "id": 101, "location": "ITO", "issue": "Severe streetlight failure along metro access corridor.",
+            "quote": "Extremely dark stretch near the main entry gate—please avoid walking solo.",
+            "timestamp": now_time - datetime.timedelta(hours=4), "avatar": "⚠️", "archived": False
+        },
+        {
+            "id": 102, "location": "Sultanpuri", "issue": "Rowdy assembly flagged near market square corridors.",
+            "quote": "Unregulated groups loitering near narrow lanes. Take the bypass highway route.",
+            "timestamp": now_time - datetime.timedelta(hours=12), "avatar": "🚨", "archived": False
+        }
     ]
 
 if "contacts" not in st.session_state:
@@ -29,9 +39,10 @@ if "contacts" not in st.session_state:
         {"id": 4, "name": "Rahul", "relation": "Brother", "gender": "Male", "script": "Listen, I am standing near the metro gate number 2. Walk fast, your train arrived.", "audio_bytes": None}
     ]
 if "next_id" not in st.session_state: st.session_state.next_id = 5
+if "next_story_id" not in st.session_state: st.session_state.next_story_id = 103
 if "active_call" not in st.session_state: st.session_state.active_call = None
 
-# --- SYSTEM WIDE ANIMATED LAYOUT CSS CONFIGURATION ---
+# --- GLOBAL STYLES & INLINE REPRODUCED INSTAGRAM REPRODUCTION CSS ---
 st.markdown("""
 <style>
     .main-title { font-size: 2.6rem; font-weight: 800; color: #e53e3e; margin-bottom: 0px; }
@@ -61,11 +72,22 @@ st.markdown("""
         background-color: white; margin: 0 auto; cursor: pointer;
         animation: story-glow 1.5s ease-in-out infinite alternate;
     }
+    .story-bubble-empty {
+        border: 3px dashed #cbd5e0; border-radius: 50%; width: 72px; height: 72px;
+        display: flex; align-items: center; justify-content: center; font-size: 2rem;
+        background-color: #f7fafc; margin: 0 auto; color: #a0aec0;
+    }
     @keyframes story-glow {
         0% { border-color: #e53e3e; box-shadow: 0 0 5px rgba(229,62,62,0.4); }
         100% { border-color: #dd8c2b; box-shadow: 0 0 12px rgba(221,140,43,0.7); }
     }
-    .story-container { text-align: center; margin: 10px; font-weight: bold; font-size: 0.9rem; }
+    .story-container { text-align: center; margin: 10px; font-weight: bold; font-size: 0.85rem; }
+    .quote-card {
+        background-color: #fffaf0; border-left: 4px solid #dd8c2b; padding: 10px 15px;
+        margin-bottom: 12px; border-radius: 0 8px 8px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .quote-title { font-size: 0.9rem; font-weight: 800; color: #2d3748; margin-bottom: 2px; }
+    .quote-body { font-size: 0.85rem; font-style: italic; color: #4a5568; line-height: 1.3; }
     .phone-screen {
         background-color: #1a202c; border: 4px solid #4a5568; border-radius: 24px;
         padding: 40px 20px; text-align: center; color: white; max-width: 320px; margin: 0 auto;
@@ -78,7 +100,22 @@ st.markdown('<p class="tagline">An AI-first safety app that predicts risk before
 
 tab1, tab2, tab3 = st.tabs(["📍 Risk Before You Go", "📉 What-If Simulator", "📞 Pretend Call"])
 
-DISCLAIMER_TEXT = "Disclaimer: The safety score and operational risk matrices computed by this application are derived strictly from historical crime metrics, geographical reporting trends, and crowd-sourced user inputs. They do not constitute personalized security guarantees or reflect live real-time crime tracking."
+DISCLAIMER_TEXT = "Disclaimer: The safety score and operational risk calculator tools computed by this application are derived strictly from historical crime metrics, geographical reporting trends, and crowd-sourced user inputs. They do not constitute personalized security guarantees or reflect live real-time crime tracking."
+
+# --- FILTER ACTIVE AND NON-EXPIRED STORIES (STAYS FOR 48 HOURS MAXIMUM) ---
+current_time_marker = datetime.datetime.now()
+active_live_stories = []
+archived_profile_stories = []
+
+for s in st.session_state.stories:
+    time_delta = current_time_marker - s["timestamp"]
+    if s["archived"]:
+        archived_profile_stories.append(s)
+    elif time_delta.total_seconds() < (48 * 3600):
+        active_live_stories.append(s)
+    else:
+        s["archived"] = True
+        archived_profile_stories.append(s)
 
 # ==============================================================================
 # TAB 1: RISK BEFORE YOU GO
@@ -86,13 +123,14 @@ DISCLAIMER_TEXT = "Disclaimer: The safety score and operational risk matrices co
 with tab1:
     st.header("Location Safety Evaluation & Live Incidents")
     
-    col_left, col_right = st.columns(2)
+    col_left, col_mid, col_right = st.columns([2, 2, 1.2])
     
     with col_left:
         st.subheader("Configure Travel Vector")
         zone_options = list(RISK_ZONES.keys()) + ["Other (Custom Location)"]
         selected_zone = st.selectbox("Select Target Destination", options=zone_options, key="tab1_zone_select")
         
+        custom_name = ""
         if selected_zone == "Other (Custom Location)":
             custom_name = st.text_input("Enter Locality Name", value="", key="tab1_custom_name")
             eval_zone = custom_name if custom_name else "Other"
@@ -104,7 +142,7 @@ with tab1:
         
         st.markdown("---")
         st.subheader("💬 AI Safety Assistant Chatbot")
-        st.caption("Report micro-hazards or suspicious activities along routes to flag coordinates instantly.")
+        st.caption("Report micro-hazards here. What you submit adds a dynamic alert story and populates the quote wall feed live.")
         
         if "chat_history" not in st.session_state:
             st.session_state.chat_history = []
@@ -112,22 +150,28 @@ with tab1:
         for msg in st.session_state.chat_history:
             with st.chat_message(msg["role"]): st.write(msg["text"])
                 
-        if chat_input := st.chat_input("Type your hazard update (e.g. 'Poorly lit section near access gates')...", key="tab1_chat_field"):
+        if chat_input := st.chat_input("State the issue (e.g. 'Poor lighting near metro gate')...", key="tab1_chat_field"):
             st.session_state.chat_history.append({"role": "user", "text": chat_input})
-            st.session_state.chat_history.append({"role": "assistant", "text": "Hazard update parsed successfully. Broad-casting geotag details to flashing stories modules."})
+            st.session_state.chat_history.append({"role": "assistant", "text": "Hazard logged across community channels. Broadcast active."})
+            
+            generated_quote = f"\"{chat_input}\" — Citizen Report"
             
             st.session_state.stories.insert(0, {
-                "timestamp": "Just Now",
+                "id": st.session_state.next_story_id,
                 "location": eval_zone if eval_zone != "Other" else "General Delhi",
                 "issue": chat_input,
-                "avatar": "⚠️"
+                "quote": generated_quote,
+                "timestamp": datetime.datetime.now(),
+                "avatar": "⚠️",
+                "archived": False
             })
+            st.session_state.next_story_id += 1
             st.rerun()
 
-    with col_right:
+    with col_mid:
         st.subheader("Computed Risk Metrics")
         
-        matching_stories = [s for s in st.session_state.stories if s["location"].lower() == str(eval_zone).lower()]
+        matching_stories = [s for s in active_live_stories if s["location"].lower() == str(eval_zone).lower()]
         res = calculate_risk(str(eval_zone), t1_time.hour, t1_wknd, len(matching_stories))
         
         badge_class = f"badge-{res['level'].lower()}"
@@ -143,23 +187,95 @@ with tab1:
             lon = RISK_ZONES[str(eval_zone)]["lon"]
             m = folium.Map(location=[lat, lon], zoom_start=14)
             folium.Marker([lat, lon], popup=f"{eval_zone}: {res['level']} Risk").add_to(m)
-            st_folium(m, height=250, width=500, key=f"map_{eval_zone}")
-            
-    # Flashing Instagram Stories Emulation Dashboard Feed
-    st.markdown("### 📸 Live Crowd-Sourced Safety Feeds (Flash Alerts)")
-    st.caption("Click any glowing marker bubble below to review active safety reports submitted by local drivers or commuters.")
-    
-    if st.session_state.stories:
-        story_cols = st.columns(min(len(st.session_state.stories), 7))
-        for idx, story in enumerate(st.session_state.stories[:7]):
+            st_folium(m, height=220, width=420, key=f"map_{eval_zone}")
+
+    with col_right:
+        st.subheader("🚨 Places on Alert")
+        st.caption("Live, user-written alert notes linked to critical hot spots.")
+        if active_live_stories:
+            for story in active_live_stories:
+                st.markdown(f"""
+                <div class="quote-card">
+                    <div class="quote-title">📍 {story['location']}</div>
+                    <div class="quote-body">{story['quote']}</div>
+                </div>
+                """, unsafe_allow_html=True)
+        else:
+            st.markdown("""
+            <div style="text-align:center; padding: 20px; color:#a0aec0; border: 1px dashed #cbd5e0; border-radius:8px;">
+                No active hazard quotes logged. System baseline stable.
+            </div>
+            """, unsafe_allow_html=True)
+
+    st.markdown("---")
+    st.markdown("### 📸 Live Crowd-Sourced Safety Stories (Active Feed)")
+    st.caption("Active safety stories expire automatically after 48 hours. You can edit script fields, inspect parameters, or manually Archive stories to your User Safety Profile below.")
+
+    if active_live_stories:
+        story_cols = st.columns(max(len(active_live_stories), 1))
+        for idx, story in enumerate(active_live_stories):
             with story_cols[idx]:
-                st.markdown(f'<div class="story-bubble">{story["avatar"]}</div>', unsafe_allow_html=True)
-                st.markdown(f'<div class="story-container">{story["location"]}<br><span style="font-size:0.75rem; color:#718096;">{story["timestamp"]}</span></div>', unsafe_allow_html=True)
-                if st.button("Inspect Logs", key=f"btn_story_{idx}", use_container_width=True):
-                    st.info(f"**Live Condition Anomaly [{story['location']} - {story['timestamp']}]:** {story['issue']}")
+                st.markdown(f"""
+                <div class="story-container">
+                    <div class="story-bubble">{story['avatar']}</div>
+                    <div style="margin-top:5px;"><span style="color:#e53e3e; font-weight:800;">● LIVE</span> <b>{story['location']}</b></div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                with st.popover("⚙️ Manage Story", use_container_width=True):
+                    st.markdown("Edit Info Details:")
+                    story["location"] = st.text_input("Tag Location", value=story["location"], key=f"edit_loc_{story['id']}")
+                    story["issue"] = st.text_area("Issue Description", value=story["issue"], key=f"edit_iss_{story['id']}")
+                    story["quote"] = st.text_input("Public Wall Quote Note", value=story["quote"], key=f"edit_qte_{story['id']}")
+                    
+                    if st.button("🗄️ Archive to Profile", key=f"arch_btn_{story['id']}", use_container_width=True):
+                        for s_item in st.session_state.stories:
+                            if s_item["id"] == story["id"]:
+                                s_item["archived"] = True
+                        st.success("Story moved safely to profile storage.")
+                        st.rerun()
     else:
-        st.write("No active alert matrix signatures loaded inside current timeline window.")
+        blank_cols = st.columns(4)
+        with blank_cols[0]:
+            st.markdown("""
+            <div class="story-container">
+                <div class="story-bubble-empty">👤</div>
+                <div style="margin-top:5px; color:#718096; font-weight:bold;">@no_active_alerts</div>
+                <span style="font-size:0.75rem; color:#a0aec0;">Feed Clear</span>
+            </div>
+            """, unsafe_allow_html=True)
+        with blank_cols[1]:
+            st.caption("💡 No Incidents Flagged: The crowdsourced story feed layer is currently empty. Use the Chatbot layout on the left column to log an issue and initiate your location's first visual safety indicator ring token.")
+
+    with st.expander("👤 User Safety Profile & Archived Stories Locker"):
+        st.markdown("#### Your Saved / Historical Archive Registry")
+        st.caption("Contains citizen safety stories that have passed the 48-hour live expiration threshold, or were manually saved by your session profile framework.")
         
+        if archived_profile_stories:
+            arch_cols = st.columns(min(len(archived_profile_stories), 6))
+            for a_idx, a_story in enumerate(archived_profile_stories):
+                with arch_cols[a_idx % 6]:
+                    st.markdown(f"""
+                    <div style="text-align:center; padding:15px; background-color:#edf2f7; border-radius:12px; margin:5px;">
+                        <span style="font-size:2rem;">📁</span>
+                        <div style="font-weight:bold; font-size:0.9rem; margin-top:2px;">{a_story['location']}</div>
+                        <div style="font-size:0.75rem; color:#718096;">Archived Logs</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    with st.popover("Open Logs", key=f"pop_arch_{a_story['id']}", use_container_width=True):
+                        st.write(f"Historical Target Locality: {a_story['location']}")
+                        st.write(f"Logged Anomaly Condition: {a_story['issue']}")
+                        st.write(f"Stored Public Alert Quote: {a_story['quote']}")
+                        if st.button("Unarchive / Bring Live", key=f"unarch_{a_story['id']}"):
+                            for s_item in st.session_state.stories:
+                                if s_item["id"] == a_story["id"]:
+                                    s_item["archived"] = False
+                                    s_item["timestamp"] = datetime.datetime.now()
+                            st.rerun()
+        else:
+            st.info("Your historical personal archive database node profile log contains zero saved entries.")
+
     st.markdown(f'<div class="disclaimer-style">{DISCLAIMER_TEXT}</div>', unsafe_allow_html=True)
 
 # ==============================================================================
