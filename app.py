@@ -333,14 +333,17 @@ with tab1:
                         st.write(f"Stored Public Alert Quote: {a_story.get('quote', '')}")
                         if st.button("Unarchive / Bring Live", key=f"unarch_{a_story.get('id', a_idx)}"):
                             for s_item in st.session_state.stories:
-                                if s_item.get("id") == a_story.get("id"):
-                                    s_item["archived"] = False
-                                    s_item["timestamp"] = datetime.datetime.now()
-                            st.rerun()
-           else:
-        st.info("Your historical personal archive database node profile log contains zero saved entries.")
+                    if st.button("Unarchive / Bring Live", key=f"unarch_{a_story.get('id', a_idx)}"):
+                        for s_item in st.session_state.stories:
+                            if s_item.get("id") == a_story.get("id"):
+                                s_item["archived"] = False
+                                s_item["timestamp"] = datetime.datetime.now()
+                        st.rerun()
+        else:
+            st.info("Your historical personal archive database node profile log contains zero saved entries.")
 
 st.markdown(f'<div class="disclaimer-style">Disclaimer: The safety score and operational risk calculator tools computed by this application are derived strictly from historical crime metrics, geographical reporting trends, and crowd-sourced user inputs. They do not constitute personalized security guarantees or reflect live real-time crime tracking.</div>', unsafe_allow_html=True)
+
 # ==============================================================================
 # TAB 2: WHAT-IF SIMULATOR
 # ==============================================================================
