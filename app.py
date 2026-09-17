@@ -327,19 +327,18 @@ with tab1:
                     </div>
                     """, unsafe_allow_html=True)
                     
-                    with st.popover("Open Logs", key=f"pop_arch_{a_story.get('id', a_idx)}", use_container_width=True):
+                                        with st.popover("Open Logs", key=f"pop_arch_{a_story.get('id', a_idx)}", use_container_width=True):
                         st.write(f"Historical Target Locality: {a_story.get('location', 'General Delhi')}")
                         st.write(f"Logged Anomaly Condition: {a_story.get('issue', '')}")
                         st.write(f"Stored Public Alert Quote: {a_story.get('quote', '')}")
+
                         if st.button("Unarchive / Bring Live", key=f"unarch_{a_story.get('id', a_idx)}"):
                             for s_item in st.session_state.stories:
-                    if st.button("Unarchive / Bring Live", key=f"unarch_{a_story.get('id', a_idx)}"):
+                                if s_item.get("id") == a_story.get("id"):
+                                    s_item["archived"] = False
+                                    s_item["timestamp"] = datetime.datetime.now()
 
-                                    for s_item in st.session_state.stories:
-                if s_item.get("id") == a_story.get("id"):
-                    s_item["archived"] = False
-                    s_item["timestamp"] = datetime.datetime.now()
-            st.rerun()
+                            st.rerun()
         else:
             st.info("Your historical personal archive database node profile log contains zero saved entries.")
 
