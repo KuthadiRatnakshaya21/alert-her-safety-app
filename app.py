@@ -476,6 +476,3 @@ with tab3:
         if st.button("Disconnect Call Overlay Frame", key="disconnect_call_btn"):
             st.session_state.active_call = None
             st.rerun()
-
-
-
