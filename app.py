@@ -171,7 +171,7 @@ with tab1:
     with col_mid:
         st.subheader("Computed Risk Metrics")
         
-        matching_stories = [s for s in active_live_stories if str(s["location"]).lower() == str(eval_zone).lower()]
+        matching_stories = [s for s in active_live_stories if str(s.get("location", "")).lower() == str(eval_zone).lower()]
         res = calculate_risk(str(eval_zone), t1_time.hour, t1_wknd, len(matching_stories))
         
         badge_class = f"badge-{res['level'].lower()}"
