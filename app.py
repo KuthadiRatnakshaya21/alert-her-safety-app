@@ -29,8 +29,6 @@ if "stories" not in st.session_state:
         }
     ]
 
-    ]
-
 if "contacts" not in st.session_state:
     st.session_state.contacts = [
         {"id": 0, "name": "Mom", "relation": "Mother", "gender": "Female", "script": "Hey beta, where are you? I am waiting outside for you, please call me back as soon as you see this.", "audio_bytes": None},
@@ -44,25 +42,22 @@ if "next_story_id" not in st.session_state: st.session_state.next_story_id = 103
 if "active_call" not in st.session_state: st.session_state.active_call = None
 
 # --- GLOBAL STYLES & INLINE REPRODUCED INSTAGRAM REPRODUCTION CSS ---
-# --- LINES 47-62 ---
-current_time_marker = datetime.datetime.now()
-active_live_stories = []
-archived_profile_stories = []
-
-for s in st.session_state.stories:
-    # Ensure any accidental string timestamp values from old sessions do not cause a crash
-    if isinstance(s["timestamp"], str):
-        s["timestamp"] = datetime.datetime.now()
-        
-    time_delta = current_time_marker - s["timestamp"]
-    if s.get("archived", False):
-        archived_profile_stories.append(s)
-    elif time_delta.total_seconds() < (48 * 3600):
-        active_live_stories.append(s)
-    else:
-        s["archived"] = True
-        archived_profile_stories.append(s)
-
+st.markdown("""
+<style>
+    .main-title { font-size: 2.6rem; font-weight: 800; color: #e53e3e; margin-bottom: 0px; }
+    .tagline { font-size: 1.1rem; color: #4a5568; margin-bottom: 25px; font-style: italic; }
+    .risk-badge {
+        padding: 12px 24px; border-radius: 8px; font-weight: bold; font-size: 1.2rem;
+        display: inline-block; color: white; text-align: center; margin-bottom: 15px;
+    }
+    .badge-low { background-color: #2f9e44; }
+    .badge-moderate { background-color: #dd8c2b; }
+    .badge-high {
+        background-color: #e53e3e; box-shadow: 0 0 0 0 rgba(229, 62, 62, 1);
+        animation: pulse-red 2s infinite;
+    }
+    @keyframes pulse-red {
+        0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(229, 62, 62, 0.7); }
         70% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(229, 62, 62, 0); }
         100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(229, 62, 62, 0); }
     }
@@ -112,17 +107,18 @@ active_live_stories = []
 archived_profile_stories = []
 
 for s in st.session_state.stories:
+    if isinstance(s["timestamp"], str):
+        s["timestamp"] = current_time_marker
     time_delta = current_time_marker - s["timestamp"]
-    if s["archived"]:
+    if s.get("archived", False):
         archived_profile_stories.append(s)
     elif time_delta.total_seconds() < (48 * 3600):
         active_live_stories.append(s)
     else:
         s["archived"] = True
         archived_profile_stories.append(s)
-
 # ==============================================================================
-# TAB 1: RISK BEFORE YOU GO
+# TAB 1: RISK BEFORE YOU GO (PART 1 OF 2)
 # ==============================================================================
 with tab1:
     st.header("Location Safety Evaluation & Live Incidents")
@@ -175,7 +171,7 @@ with tab1:
     with col_mid:
         st.subheader("Computed Risk Metrics")
         
-        matching_stories = [s for s in active_live_stories if s["location"].lower() == str(eval_zone).lower()]
+        matching_stories = [s for s in active_live_stories if str(s["location"]).lower() == str(eval_zone).lower()]
         res = calculate_risk(str(eval_zone), t1_time.hour, t1_wknd, len(matching_stories))
         
         badge_class = f"badge-{res['level'].lower()}"
@@ -193,9 +189,13 @@ with tab1:
             folium.Marker([lat, lon], popup=f"{eval_zone}: {res['level']} Risk").add_to(m)
             st_folium(m, height=220, width=420, key=f"map_{eval_zone}")
 
+# ==============================================================================
+# TAB 1: RISK BEFORE YOU GO (PART 2 OF 2)
+# ==============================================================================
     with col_right:
         st.subheader("🚨 Places on Alert")
         st.caption("Live, user-written alert notes linked to critical hot spots.")
+        
         if active_live_stories:
             for story in active_live_stories:
                 st.markdown(f"""
@@ -210,11 +210,11 @@ with tab1:
                 No active hazard quotes logged. System baseline stable.
             </div>
             """, unsafe_allow_html=True)
-
+            
     st.markdown("---")
     st.markdown("### 📸 Live Crowd-Sourced Safety Stories (Active Feed)")
     st.caption("Active safety stories expire automatically after 48 hours. You can edit script fields, inspect parameters, or manually Archive stories to your User Safety Profile below.")
-
+    
     if active_live_stories:
         story_cols = st.columns(max(len(active_live_stories), 1))
         for idx, story in enumerate(active_live_stories):
@@ -240,7 +240,7 @@ with tab1:
                         st.rerun()
     else:
         blank_cols = st.columns(4)
-        with blank_cols[0]:
+        with blank_cols:
             st.markdown("""
             <div class="story-container">
                 <div class="story-bubble-empty">👤</div>
@@ -248,7 +248,7 @@ with tab1:
                 <span style="font-size:0.75rem; color:#a0aec0;">Feed Clear</span>
             </div>
             """, unsafe_allow_html=True)
-        with blank_cols[1]:
+        with blank_cols:
             st.caption("💡 No Incidents Flagged: The crowdsourced story feed layer is currently empty. Use the Chatbot layout on the left column to log an issue and initiate your location's first visual safety indicator ring token.")
 
     with st.expander("👤 User Safety Profile & Archived Stories Locker"):
@@ -283,7 +283,7 @@ with tab1:
     st.markdown(f'<div class="disclaimer-style">{DISCLAIMER_TEXT}</div>', unsafe_allow_html=True)
 
 # ==============================================================================
-# TAB 2: WHAT-IF SIMULATOR
+# TAB 2: WHAT-IF SIMULATOR (PART 1 OF 2)
 # ==============================================================================
 with tab2:
     st.header("Temporal Multi-Variable Simulation Matrix")
@@ -292,20 +292,20 @@ with tab2:
     sim_weekend = st.checkbox("Simulate For Weekend Window?", value=False, key="t2_wknd")
     sim_hour = st.slider("Vary Departure Timeline (24h Clock Axis)", min_value=0, max_value=23, value=12, key="t2_hour_slider")
     
-    # Calculate stories strictly for the simulated zone
-    matching_stories_sim = [s for s in st.session_state.stories if s["location"].lower() == sim_zone.lower()]
+    matching_stories_sim = [s for s in active_live_stories if s["location"].lower() == sim_zone.lower()]
     current_res = calculate_risk(sim_zone, sim_hour, sim_weekend, len(matching_stories_sim))
     
     badge_style = f"badge-{current_res['level'].lower()}"
     st.markdown(f'<div class="risk-badge {badge_style}">Simulated State: {current_res["level"]} Risk Footprint ({current_res["score"]}/100)</div>', unsafe_allow_html=True)
-    
-    # Generate continuous day steps for visual line chart profile
+
+# ==============================================================================
+# TAB 2: WHAT-IF SIMULATOR (PART 2 OF 2)
+# ==============================================================================
     hours_axis = list(range(24))
     scores_axis = [calculate_risk(sim_zone, h, sim_weekend, len(matching_stories_sim))["score"] for h in hours_axis]
-    chart_data = pd.DataFrame({"Hour of Day": hours_axis, "Risk Metric Score": scores_axis})
+    chart_data = pd.DataFrame({"Hour of Day": hours_axis, "Risk Score": scores_axis})
     st.line_chart(chart_data.set_index("Hour of Day"))
     
-    # Compute dynamic path recommendation window
     future_hours = [(sim_hour + i) % 24 for i in range(1, 6)]
     best_hour = sim_hour
     lowest_score = current_res["score"]
@@ -325,15 +325,13 @@ with tab2:
     st.markdown(f'<div class="disclaimer-style">{DISCLAIMER_TEXT}</div>', unsafe_allow_html=True)
 
 # ==============================================================================
-# TAB 3: PRETEND CALL
+# TAB 3: PRETEND CALL (COMPLETE ARCHITECTURE NODE)
 # ==============================================================================
 with tab3:
     st.header("Situational De-escalation Virtual Check-In Screen")
     
-    # Render contact grid with clean distinct keys to fix empty loop collision
     for idx in range(len(st.session_state.contacts)):
-        if idx >= len(st.session_state.contacts):
-            break
+        if idx >= len(st.session_state.contacts): break
         c = st.session_state.contacts[idx]
         row_id = c["id"]
         
@@ -350,10 +348,9 @@ with tab3:
         with c_col4:
             sub1, sub2 = st.columns(2)
             with sub1:
-                if st.button("📞", key=f"trigger_call_btn_{row_id}", help="Ring active phone frame"):
-                    st.session_state.active_call = st.session_state.contacts[idx]
+                if st.button("📞", key=f"trigger_call_btn_{row_id}"): st.session_state.active_call = st.session_state.contacts[idx]
             with sub2:
-                if st.button("🗑️", key=f"delete_node_btn_{row_id}", help="Purge contact index trace"):
+                if st.button("🗑️", key=f"delete_node_btn_{row_id}"):
                     st.session_state.contacts.pop(idx)
                     st.rerun()
                     
@@ -378,8 +375,6 @@ with tab3:
                 st.session_state.next_id += 1
                 st.success("New contact configured successfully.")
                 st.rerun()
-            else:
-                st.error("Validation error: Contact field mapping cannot be empty.")
                 
     if st.session_state.active_call is not None:
         target = st.session_state.active_call
@@ -393,8 +388,8 @@ with tab3:
             <div style="font-size: 0.85rem; color: #dd8c2b; margin-bottom: 30px;">Voice Profile Channel: {target['gender']} Voice</div>
             <div style="font-size: 4rem; margin-bottom: 40px;">👤</div>
             <div style="display: flex; justify-content: space-around; width: 100%;">
-                <div style="background-color: #2f9e44; padding: 15px; border-radius: 50%; width: 55px; height: 55px; line-height: 25px; text-align: center;">🟢</div>
-                <div style="background-color: #e53e3e; padding: 15px; border-radius: 50%; width: 55px; height: 55px; line-height: 25px; text-align: center;">🔴</div>
+                <div style="background-color: #2f9e44; padding: 15px; border-radius: 50%; width: 55px; height: 55px;"></div>
+                <div style="background-color: #e53e3e; padding: 15px; border-radius: 50%; width: 55px; height: 55px;"></div>
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -404,9 +399,9 @@ with tab3:
         else:
             with st.spinner("Synthesizing gendered audio output stream..."):
                 if target["gender"] == "Male":
-                    tts = gTTS(text=target["script"], lang='en', tld='co.uk')  # Dynamic Male British Voice Hack
+                    tts = gTTS(text=target["script"], lang='en', tld='co.uk')
                 else:
-                    tts = gTTS(text=target["script"], lang='en', tld='com')    # Standard Female Voice
+                    tts = gTTS(text=target["script"], lang='en', tld='com')
                     
                 temp_file = f"call_{target['id']}.mp3"
                 tts.save(temp_file)
@@ -415,11 +410,10 @@ with tab3:
                     generated_bytes = f.read()
                 st.audio(generated_bytes, format="audio/mp3", autoplay=True)
                 
-                try: 
-                    os.remove(temp_file)
-                except OSError: 
-                    pass
+                try: os.remove(temp_file)
+                except OSError: pass
                     
         if st.button("Disconnect Call Overlay Frame", key="disconnect_call_btn"):
             st.session_state.active_call = None
             st.rerun()
+
