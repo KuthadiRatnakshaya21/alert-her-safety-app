@@ -383,7 +383,8 @@ with tab2:
     else:
         st.info("💡 Selected timestamp frame corresponds to the absolute mathematical lowest baseline for this sector.")
         
-    st.markdown(f'<div class="disclaimer-style">{DISCLAIMER_TEXT}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="disclaimer-style">Disclaimer: The safety score and operational risk calculator tools computed by this application are derived strictly from historical crime metrics, geographical reporting trends, and crowd-sourced user inputs. They do not constitute personalized security guarantees or reflect live real-time crime tracking.</div>', unsafe_allow_html=True)
+
 # ==============================================================================
 # TAB 3: PRETEND CALL
 # ==============================================================================
@@ -476,3 +477,4 @@ with tab3:
         if st.button("Disconnect Call Overlay Frame", key="disconnect_call_btn"):
             st.session_state.active_call = None
             st.rerun()
+
