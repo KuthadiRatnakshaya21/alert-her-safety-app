@@ -83,7 +83,7 @@ DISCLAIMER_TEXT = "Disclaimer: The safety score and risk index computed by this 
 with tab1:
     st.header("Location Safety Evaluation & Live Incidents")
     
-    col_left, col_right = st.columns()
+    col_left, col_right = st.columns(2)
     
     with col_left:
         st.subheader("Configure Travel Vector")
