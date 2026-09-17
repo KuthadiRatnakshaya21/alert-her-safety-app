@@ -12,34 +12,13 @@ except ImportError:
     st.error("Please ensure folium and streamlit-folium are added to requirements.txt")
 
 st.set_page_config(page_title="ALERT HER", page_icon="🛡️", layout="wide")
-# ==============================================================================
-# 🔐 SECURE USER LOGIN GATEWAY
-# ==============================================================================
+
+# --- 🔐 SYSTEM WIDE REGISTRATION & DATA STORAGE SETUP ---
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
+if "user_profile" not in st.session_state:
+    st.session_state.user_profile = None
 
-if not st.session_state.logged_in:
-    # Centered single-column login panel box layout
-    _, login_col, _ = st.columns([1, 1.5, 1])
-    with login_col:
-        st.markdown("<div style='text-align:center; padding:20px;'><h1>🛡️ ALERT HER</h1><h3>Secure User Access Portal</h3></div>", unsafe_allow_html=True)
-        
-        login_email = st.text_input("Username / Email Address", placeholder="Enter your email...")
-        login_password = st.text_input("Password", type="password", placeholder="Enter your password...")
-        
-        st.caption("💡 *Demo Credentials: You can use any testing email/password to evaluate the portal frame parameters live.*")
-        
-        if st.button("Authenticate & Enter System", type="primary", use_container_width=True):
-            if login_email and login_password:
-                st.session_state.logged_in = True
-                st.success("Identity vector validated. Decrypting safety control arrays...")
-                st.rerun()
-            else:
-                st.error("Authentication boundary error: Fields cannot be left empty.")
-    st.stop() # Stops execution here so unauthenticated users never see your safety tabs below!
-
-
-# --- INITIALIZE CROWD STORY MEMORY STATE METRIC SYSTEM ---
 if "stories" not in st.session_state:
     now_time = datetime.datetime.now()
     st.session_state.stories = [
@@ -59,15 +38,13 @@ if "contacts" not in st.session_state:
     st.session_state.contacts = [
         {"id": 0, "name": "Mom", "relation": "Mother", "gender": "Female", "script": "Hey beta, where are you? I am waiting outside for you, please call me back as soon as you see this.", "audio_bytes": None},
         {"id": 1, "name": "Dad", "relation": "Father", "gender": "Male", "script": "Beta, have you boarded your ride yet? Share your live location right now.", "audio_bytes": None},
-        {"id": 2, "name": "Dr. Sharma", "relation": "Doctor", "gender": "Male", "script": "This is Dr. Sharma's clinic. Your medical reports are ready for collection, please call back tomorrow.", "audio_bytes": None},
-        {"id": 3, "name": "Kriti", "relation": "Sister", "gender": "Female", "script": "Hey! I have reached the restaurant already, where are you stuck? Ready to order!", "audio_bytes": None},
-        {"id": 4, "name": "Rahul", "relation": "Brother", "gender": "Male", "script": "Listen, I am standing near the metro gate number 2. Walk fast, your train arrived.", "audio_bytes": None}
+        {"id": 2, "name": "Dr. Sharma", "relation": "Doctor", "gender": "Male", "script": "This is Dr. Sharma's clinic. Your medical reports are ready for collection, please call back tomorrow.", "audio_bytes": None}
     ]
 if "next_id" not in st.session_state: st.session_state.next_id = 5
 if "next_story_id" not in st.session_state: st.session_state.next_story_id = 103
 if "active_call" not in st.session_state: st.session_state.active_call = None
 
-# --- GLOBAL STYLES & INLINE REPRODUCED INSTAGRAM REPRODUCTION CSS ---
+# --- GLOBAL STYLES & INTERACTIVE UI SYSTEM CSS ---
 st.markdown("""
 <style>
     .main-title { font-size: 2.6rem; font-weight: 800; color: #e53e3e; margin-bottom: 0px; }
@@ -84,8 +61,12 @@ st.markdown("""
     }
     @keyframes pulse-red {
         0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(229, 62, 62, 0.7); }
-        70% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(229, 62, 62, 0); }
+        70% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(229, 62, 62, 1); }
         100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(229, 62, 62, 0); }
+    }
+    .auth-box {
+        border: 1px solid #e2e8f0; border-radius: 16px; padding: 30px;
+        background-color: #ffffff; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-top: 50px;
     }
     .disclaimer-style {
         font-size: 0.85rem; color: #718096; text-align: center;
@@ -120,12 +101,59 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# ==============================================================================
+# 🔐 MULTI-PROVIDER AUTHENTICATION SELECTION MATRIX
+# ==============================================================================
+if not st.session_state.logged_in:
+    _, center_col, _ = st.columns([1, 1.3, 1])
+    with center_col:
+        st.markdown('<div class="auth-box">', unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align:center; color:#e53e3e; margin-bottom:0px;'>🛡️ ALERT HER</h2>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align:center; color:#718096; margin-top:0px; font-size:0.95rem;'>Women's Safety & Emergency Prevention Network</p>", unsafe_allow_html=True)
+        
+        auth_method = st.radio("Choose Access Method", ["Standard Login", "Create Account", "Single Sign-On (OAuth)"], horizontal=True)
+        
+        if auth_method == "Standard Login":
+            input_identity = st.text_input("Email Address or Mobile Number", placeholder="name@domain.com or +91 XXXXX XXXXX")
+            input_password = st.text_input("Password", type="password", placeholder="••••••••")
+            if st.button("Sign In to Secure Node", type="primary", use_container_width=True):
+                if input_identity and input_password:
+                    st.session_state.logged_in = True
+                    st.session_state.user_profile = {"id": input_identity, "type": "Native User"}
+                    st.rerun()
+                else:
+                    st.error("Authentication fields cannot be left empty.")
+                    
+        elif auth_method == "Create Account":
+            reg_name = st.text_input("Full Name")
+            reg_contact = st.text_input("Email or Mobile Number")
+            reg_pwd = st.text_input("Choose Security Password", type="password")
+            if st.button("Register & Initialize Security Token", type="primary", use_container_width=True):
+                if reg_name and reg_contact and reg_pwd:
+                    st.session_state.logged_in = True
+                    st.session_state.user_profile = {"id": reg_contact, "name": reg_name, "type": "Registered Identity Vector"}
+                    st.success("Identity vector stored inside native application thread cache.")
+                    st.rerun()
+                else:
+                    st.error("Please fill in all verification records.")
+                    
+        elif auth_method == "Single Sign-On (OAuth)":
+            st.markdown("<p style='font-size:0.85rem; color:#718096; text-align:center; margin-bottom:15px;'>Select an authorized single sign-on anchor to pass credentials safely:</p>", unsafe_allow_html=True)
+            if st.button("🌐 Continue with Google ID", use_container_width=True):
+                st.session_state.logged_in = True
+                st.session_state.user_profile = {"id": "google_user@gmail.com", "type": "Google Cloud OAuth"}
+                st.rerun()
+            if st.button("🍏 Continue with iCloud Apple ID", use_container_width=True):
+                st.session_state.logged_in = True
+                st.session_state.user_profile = {"id": "icloud_vector@icloud.com", "type": "Apple Identity Security"}
+                st.rerun()
+                
+        st.markdown('</div>', unsafe_allow_html=True)
+    st.stop()
+
+# --- APPLICATION HEADER FRAMEWORK FOR AUTHENTICATED SESSIONS ---
 st.markdown('<p class="main-title">🛡️ ALERT HER — A Women\'s Safety App</p>', unsafe_allow_html=True)
-st.markdown('<p class="tagline">An AI-first safety app that predicts risk before travel, suggests safer decisions, and finds nearby help—preventing emergencies instead of reacting to them.</p>', unsafe_allow_html=True)
-
-tab1, tab2, tab3 = st.tabs(["📍 Risk Before You Go", "📉 What-If Simulator", "📞 Pretend Call"])
-
-DISCLAIMER_TEXT = "Disclaimer: The safety score and operational risk calculator tools computed by this application are derived strictly from historical crime metrics, geographical reporting trends, and crowd-sourced user inputs. They do not constitute personalized security guarantees or reflect live real-time crime tracking."
+st.markdown(f'<p class="tagline">An AI-first safety app that predicts risk before travel, suggests safer decisions, and finds nearby help—preventing emergencies instead of reacting to them. <span style="color:#2f9e44; font-weight:800; float:right; font-size:0.85rem; font-style:normal;">👤 Session Profile: {st.session_state.user_profile["id"]}</span></p>', unsafe_allow_html=True)
 
 # --- FILTER ACTIVE AND NON-EXPIRED STORIES (STAYS FOR 48 HOURS MAXIMUM) ---
 current_time_marker = datetime.datetime.now()
@@ -143,6 +171,7 @@ for s in st.session_state.stories:
     else:
         s["archived"] = True
         archived_profile_stories.append(s)
+
 # ==============================================================================
 # TAB 1: RISK BEFORE YOU GO
 # ==============================================================================
