@@ -343,7 +343,7 @@ with tab1:
         else:
             st.info("Your historical personal archive database node profile log contains zero saved entries.")
 
-st. markdown(f'<div class="disclaimer-style">Disclaimer: The safety score and operational risk calculator tools computed by this application are derived strictly from historical crime metrics, geographical reporting trends, and crowd-sourced user inputs. They do not constitute personalized security guarantees or reflect live real-time crime tracking.</div>', unsafe_allow_html=True)
+ st.markdown(f'<div class="disclaimer-style">Disclaimer: The safety score and operational risk calculator tools computed by this application are derived strictly from historical crime metrics, geographical reporting trends, and crowd-sourced user inputs. They do not constitute personalized security guarantees or reflect live real-time crime tracking.</div>', unsafe_allow_html=True)
 
 
 # ==============================================================================
