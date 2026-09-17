@@ -175,8 +175,10 @@ for s in st.session_state.stories:
 # ==============================================================================
 # TAB 1: RISK BEFORE YOU GO
 # ==============================================================================
-with tab1:
-    st.header("Location Safety Evaluation & Live Incidents")
+tab1, tab2, tab3 = st.tabs(["📍 Risk Before You Go", "📉 What-If Simulator", "📞 Pretend Call"])
+            archived_profile_stories.append(s)
+    
+ st.header("Location Safety Evaluation & Live Incidents")
     
     col_left, col_mid, col_right = st.columns([2, 2, 1.2])
     
