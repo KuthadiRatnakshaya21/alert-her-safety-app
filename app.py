@@ -172,6 +172,9 @@ for s in st.session_state.stories:
         s["archived"] = True
         archived_profile_stories.append(s)
 
+tab1, tab2, tab3 = st.tabs(["📍 Risk Before You Go", "📉 What-If Simulator", "📞 Pretend Call"])
+
+
 # ==============================================================================
 # TAB 1: RISK BEFORE YOU GO
 # ==============================================================================
