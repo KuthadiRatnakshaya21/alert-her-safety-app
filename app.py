@@ -226,14 +226,13 @@ with tab1:
                 
                 with st.popover("⚙️ Manage Story", use_container_width=True):
                     st.markdown("Edit Info Details:")
-                    # SAFE GETS IMPLEMENTED HERE BELOW TO PREVENT CACHE KEYERROR CRASHES
                     current_loc = story.get("location", "General Delhi")
                     current_iss = story.get("issue", "")
                     current_qte = story.get("quote", "")
                     
                     story["location"] = st.text_input("Tag Location", value=current_loc, key=f"edit_loc_{story.get('id', idx)}")
                     story["issue"] = st.text_area("Issue Description", value=current_iss, key=f"edit_iss_{story.get('id', idx)}")
-                    story["quote"] = st.text_input("Public Wall Quote Note", value=current_qte, key=f"edit_qte_{story['id']}")
+                    story["quote"] = st.text_input("Public Wall Quote Note", value=current_qte, key=f"edit_qte_{story.get('id', idx)}")
                     
                     if st.button("🗄️ Archive to Profile", key=f"arch_btn_{story.get('id', idx)}", use_container_width=True):
                         for s_item in st.session_state.stories:
@@ -284,6 +283,7 @@ with tab1:
             st.info("Your historical personal archive database node profile log contains zero saved entries.")
 
     st.markdown(f'<div class="disclaimer-style">{DISCLAIMER_TEXT}</div>', unsafe_allow_html=True)
+
 
 # ==============================================================================
 # TAB 2: WHAT-IF SIMULATOR
