@@ -172,3 +172,134 @@ with tab2:
     sim_weekend = st.checkbox("Simulate For Weekend Window?", value=False, key="t2_wknd")
     sim_hour = st.slider("Vary Departure Timeline (24h Clock Axis)", min_value=0, max_value=23, value=12, key="t2_hour_slider")
     
+    # Calculate stories strictly for the simulated zone
+    matching_stories_sim = [s for s in st.session_state.stories if s["location"].lower() == sim_zone.lower()]
+    current_res = calculate_risk(sim_zone, sim_hour, sim_weekend, len(matching_stories_sim))
+    
+    badge_style = f"badge-{current_res['level'].lower()}"
+    st.markdown(f'<div class="risk-badge {badge_style}">Simulated State: {current_res["level"]} Risk Footprint ({current_res["score"]}/100)</div>', unsafe_allow_html=True)
+    
+    # Generate continuous day steps for visual line chart profile
+    hours_axis = list(range(24))
+    scores_axis = [calculate_risk(sim_zone, h, sim_weekend, len(matching_stories_sim))["score"] for h in hours_axis]
+    chart_data = pd.DataFrame({"Hour of Day": hours_axis, "Risk Metric Score": scores_axis})
+    st.line_chart(chart_data.set_index("Hour of Day"))
+    
+    # Compute dynamic path recommendation window
+    future_hours = [(sim_hour + i) % 24 for i in range(1, 6)]
+    best_hour = sim_hour
+    lowest_score = current_res["score"]
+    
+    for h in future_hours:
+        h_score = calculate_risk(sim_zone, h, sim_weekend, len(matching_stories_sim))["score"]
+        if h_score < lowest_score:
+            lowest_score = h_score
+            best_hour = h
+            
+    best_res = calculate_risk(sim_zone, best_hour, sim_weekend, len(matching_stories_sim))
+    if best_hour != sim_hour:
+        st.success(f"💡 **Temporal Safety Mitigation Optimization Matrix:** Adjusting travel plans to **{best_hour:02d}:00** shifts risk boundaries down to a **{best_res['level']}** level.")
+    else:
+        st.info("💡 Selected timestamp frame corresponds to the absolute mathematical lowest baseline for this sector.")
+        
+    st.markdown(f'<div class="disclaimer-style">{DISCLAIMER_TEXT}</div>', unsafe_allow_html=True)
+
+# ==============================================================================
+# TAB 3: PRETEND CALL
+# ==============================================================================
+with tab3:
+    st.header("Situational De-escalation Virtual Check-In Screen")
+    
+    # Render contact grid with clean distinct keys to fix empty loop collision
+    for idx in range(len(st.session_state.contacts)):
+        if idx >= len(st.session_state.contacts):
+            break
+        c = st.session_state.contacts[idx]
+        row_id = c["id"]
+        
+        c_col1, c_col2, c_col3, c_col4 = st.columns([1.5, 1, 3, 1.5])
+        
+        with c_col1:
+            new_name = st.text_input(f"Name Input #{row_id}", value=c["name"], key=f"name_field_{row_id}", label_visibility="collapsed")
+            st.session_state.contacts[idx]["name"] = new_name
+        with c_col2:
+            new_gender = st.selectbox(f"Gender Select #{row_id}", ["Male", "Female"], index=0 if c["gender"] == "Male" else 1, key=f"gender_field_{row_id}", label_visibility="collapsed")
+            st.session_state.contacts[idx]["gender"] = new_gender
+        with c_col3:
+            st.caption(f"**[{c.get('relation','Contact')}]** \"{c['script'][:55]}...\"")
+        with c_col4:
+            sub1, sub2 = st.columns(2)
+            with sub1:
+                if st.button("📞", key=f"trigger_call_btn_{row_id}", help="Ring active phone frame"):
+                    st.session_state.active_call = st.session_state.contacts[idx]
+            with sub2:
+                if st.button("🗑️", key=f"delete_node_btn_{row_id}", help="Purge contact index trace"):
+                    st.session_state.contacts.pop(idx)
+                    st.rerun()
+                    
+    with st.expander("➕ Configure Custom Contact Profile Node"):
+        new_c_name = st.text_input("Name Identifier", key="add_c_name")
+        new_c_rel = st.text_input("Relationship Structure (e.g. Police, Guard)", key="add_c_rel")
+        new_c_gender = st.selectbox("Vocal Gender Assignment Profile", ["Male", "Female"], key="add_c_gender")
+        new_c_script = st.text_area("Custom TTS Prompt Script", value="I am tracking your navigation route coordinates live. Keep talking to me.", key="add_c_script")
+        uploaded_voice = st.file_uploader("Upload Direct Audio File Override (WAV/MP3)", type=["wav", "mp3"], key="add_c_audio")
+        
+        if st.button("Save Profile Structure", key="add_c_submit_btn"):
+            if new_c_name:
+                audio_data = uploaded_voice.read() if uploaded_voice is not None else None
+                st.session_state.contacts.append({
+                    "id": st.session_state.next_id,
+                    "name": new_c_name,
+                    "relation": new_c_rel,
+                    "gender": new_c_gender,
+                    "script": new_c_script,
+                    "audio_bytes": audio_data
+                })
+                st.session_state.next_id += 1
+                st.success("New contact configured successfully.")
+                st.rerun()
+            else:
+                st.error("Validation error: Contact field mapping cannot be empty.")
+                
+    if st.session_state.active_call is not None:
+        target = st.session_state.active_call
+        st.markdown("---")
+        
+        st.markdown(f"""
+        <div class="phone-screen">
+            <div style="font-size: 0.8rem; color: #a0aec0; letter-spacing: 2px; margin-bottom: 5px;">ALERT HER INCOMING CONNECTION</div>
+            <div style="font-size: 2rem; font-weight: bold; margin-bottom: 5px;">{target['name']}</div>
+            <div style="font-size: 1rem; color: #cbd5e0; margin-bottom: 5px;">({target.get('relation','Contact')})</div>
+            <div style="font-size: 0.85rem; color: #dd8c2b; margin-bottom: 30px;">Voice Profile Channel: {target['gender']} Voice</div>
+            <div style="font-size: 4rem; margin-bottom: 40px;">👤</div>
+            <div style="display: flex; justify-content: space-around; width: 100%;">
+                <div style="background-color: #2f9e44; padding: 15px; border-radius: 50%; width: 55px; height: 55px; line-height: 25px; text-align: center;">🟢</div>
+                <div style="background-color: #e53e3e; padding: 15px; border-radius: 50%; width: 55px; height: 55px; line-height: 25px; text-align: center;">🔴</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        if target["audio_bytes"] is not None:
+            st.audio(target["audio_bytes"], format="audio/mp3")
+        else:
+            with st.spinner("Synthesizing gendered audio output stream..."):
+                if target["gender"] == "Male":
+                    tts = gTTS(text=target["script"], lang='en', tld='co.uk')  # Dynamic Male British Voice Hack
+                else:
+                    tts = gTTS(text=target["script"], lang='en', tld='com')    # Standard Female Voice
+                    
+                temp_file = f"call_{target['id']}.mp3"
+                tts.save(temp_file)
+                
+                with open(temp_file, "rb") as f:
+                    generated_bytes = f.read()
+                st.audio(generated_bytes, format="audio/mp3", autoplay=True)
+                
+                try: 
+                    os.remove(temp_file)
+                except OSError: 
+                    pass
+                    
+        if st.button("Disconnect Call Overlay Frame", key="disconnect_call_btn"):
+            st.session_state.active_call = None
+            st.rerun()
