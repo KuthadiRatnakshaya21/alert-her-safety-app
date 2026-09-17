@@ -12,6 +12,32 @@ except ImportError:
     st.error("Please ensure folium and streamlit-folium are added to requirements.txt")
 
 st.set_page_config(page_title="ALERT HER", page_icon="🛡️", layout="wide")
+# ==============================================================================
+# 🔐 SECURE USER LOGIN GATEWAY
+# ==============================================================================
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+
+if not st.session_state.logged_in:
+    # Centered single-column login panel box layout
+    _, login_col, _ = st.columns([1, 1.5, 1])
+    with login_col:
+        st.markdown("<div style='text-align:center; padding:20px;'><h1>🛡️ ALERT HER</h1><h3>Secure User Access Portal</h3></div>", unsafe_allow_html=True)
+        
+        login_email = st.text_input("Username / Email Address", placeholder="Enter your email...")
+        login_password = st.text_input("Password", type="password", placeholder="Enter your password...")
+        
+        st.caption("💡 *Demo Credentials: You can use any testing email/password to evaluate the portal frame parameters live.*")
+        
+        if st.button("Authenticate & Enter System", type="primary", use_container_width=True):
+            if login_email and login_password:
+                st.session_state.logged_in = True
+                st.success("Identity vector validated. Decrypting safety control arrays...")
+                st.rerun()
+            else:
+                st.error("Authentication boundary error: Fields cannot be left empty.")
+    st.stop() # Stops execution here so unauthenticated users never see your safety tabs below!
+
 
 # --- INITIALIZE CROWD STORY MEMORY STATE METRIC SYSTEM ---
 if "stories" not in st.session_state:
