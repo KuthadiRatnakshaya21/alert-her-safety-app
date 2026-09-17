@@ -126,7 +126,7 @@ with tab1:
         st.subheader("Computed Risk Metrics")
         
         matching_stories = [s for s in st.session_state.stories if s["location"].lower() == eval_zone.lower()]
-        res = calculate_risk(eval_zone, departure_time.hour, is_weekend, len(matching_stories))
+        res = calculate_risk(eval_zone, t1_time.hour, t1_wknd, len(matching_stories))
         
         badge_class = f"badge-{res['level'].lower()}"
         st.markdown(f'<div class="risk-badge {badge_class}">{res["level"]} Risk Level (Score: {res["score"]}/100)</div>', unsafe_allow_html=True)
