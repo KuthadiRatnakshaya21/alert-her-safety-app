@@ -1,253 +1,196 @@
-"""
-app.py — Digital Twin AI-Based Adaptive Power Amplifier (website)
---------------------------------------------------------------
-This is the ONLY file with website code in it. All AI/math logic lives
-in pa_core.py. This file just draws tabs/buttons and shows results.
-
-Run locally with:   streamlit run app.py
-"""
-
 import streamlit as st
-import numpy as np
-import matplotlib.pyplot as plt
+import pandas as pd
+import datetime
+import os
+import base64
+from gtts import gTTS
 from risk_engine import RISK_ZONES, calculate_risk
 
+# Component verification safety boundaries
+try:
+    import folium
+    from streamlit_folium import st_folium
+except ImportError:
+    st.error("Missing critical mapping libraries. Please ensure streamlit-folium and folium are provisioned.")
 
-st.set_page_config(page_title="AI Digital Twin — Power Amplifier", layout="wide")
+st.set_page_config(page_title="Alert Her", page_icon="🛡️", layout="wide")
 
-# ------------------------------------------------------------------
-# Session state = "memory" of the website while it's open, so results
-# from one tab (e.g. the trained twin) are available in later tabs.
-# ------------------------------------------------------------------
-if "data" not in st.session_state:
-    st.session_state.data = None
-if "twin" not in st.session_state:
-    st.session_state.twin = None
-if "thermal" not in st.session_state:
-    st.session_state.thermal = None
-if "opt" not in st.session_state:
-    st.session_state.opt = None
-if "loop" not in st.session_state:
-    st.session_state.loop = None
+# --- SYSTEM WIDE CUSTOM ANIMATED CSS LAYOUT ---
+st.markdown("""
+<style>
+    .main-title { font-size: 2.6rem; font-weight: 800; color: #e53e3e; margin-bottom: 0px; }
+    .tagline { font-size: 1.1rem; color: #4a5568; margin-bottom: 25px; }
+    .risk-badge {
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: bold;
+        font-size: 1.3rem;
+        display: inline-block;
+        color: white;
+        text-align: center;
+        margin-bottom: 15px;
+    }
+    .badge-low { background-color: #2f9e44; }
+    .badge-moderate { background-color: #dd8c2b; }
+    .badge-high {
+        background-color: #e53e3e;
+        box-shadow: 0 0 0 0 rgba(229, 62, 62, 1);
+        animation: pulse-red 2s infinite;
+    }
+    @keyframes pulse-red {
+        0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(229, 62, 62, 0.7); }
+        70% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(229, 62, 62, 0); }
+        100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(229, 62, 62, 0); }
+    }
+    .story-ring {
+        border: 3px solid #e53e3e;
+        border-radius: 50%;
+        width: 75px;
+        height: 75px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 8px auto;
+        background-color: #fff;
+        cursor: pointer;
+        animation: ring-glow 1.5s ease-in-out infinite alternate;
+    }
+    @keyframes ring-glow {
+        0% { border-color: #e53e3e; box-shadow: 0 0 5px rgba(229,62,62,0.5); }
+        100% { border-color: #dd8c2b; box-shadow: 0 0 15px rgba(221,140,43,0.8); }
+    }
+    .story-container { text-align: center; margin: 10px; padding: 5px; }
+    .story-tag { font-size: 0.85rem; font-weight: bold; color: #2d3748; display: block; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
+    .phone-frame {
+        background-color: #1a202c;
+        border: 4px solid #4a5568;
+        border-radius: 24px;
+        padding: 40px 20px;
+        text-align: center;
+        color: white;
+        max-width: 320px;
+        margin: 20px auto;
+    }
+    .academic-disclaimer {
+        font-size: 0.85rem;
+        color: #718096;
+        text-align: center;
+        margin-top: 40px;
+        padding: 15px;
+        border-top: 1px dashed #cbd5e0;
+        line-height: 1.4;
+    }
+</style>
+""", unsafe_content_html=True)
 
-# ------------------------------------------------------------------
-# Sidebar — shows the professor's exact architecture flow
-# ------------------------------------------------------------------
-st.sidebar.title("System Architecture")
-st.sidebar.markdown(
-    """
-    **Closed-Loop AI + Digital Twin flow:**
+# --- REPOSITORIES SHARED INITIALIZATION LAYERS ---
+if "stories" not in st.session_state:
+    st.session_state.stories = [
+        {"location": "ITO", "time": "11:45 AM", "issue": "Severe streetlight failure along metro access corridor. Path dark.", "avatar": "⚠️"},
+        {"location": "Sultanpuri", "time": "12:15 PM", "issue": "Crowded unregulated assembly near market gate. Avoid narrow lanes.", "avatar": "🚨"},
+        {"location": "Vasant Vihar", "time": "10:30 AM", "issue": "Suspicious loitering near campus back gate reported.", "avatar": "👀"}
+    ]
 
-    1. Physical PA → Sensors
-    2. Data Acquisition
-    3. Digital Twin Engine
-    4. Hybrid Physics–AI Model
-    5. State Estimation (thermal/aging)
-    6. AI Optimizer (Bayesian)
-    7. Adaptive Control → back to PA
-    """
-)
-st.sidebar.info("Use the tabs to run each block in order (1→5). Each block feeds the next.")
+if "contacts" not in st.session_state:
+    st.session_state.contacts = [
+        {"id": 0, "name": "Mom", "relation": "Mother", "script": "Hey beta, where are you? I am waiting outside for you, please call me back as soon as you see this.", "gender": "Female", "audio_bytes": None},
+        {"id": 1, "name": "Dad", "relation": "Father", "script": "Beta, have you boarded your ride yet? Share your live location right now.", "gender": "Male", "audio_bytes": None},
+        {"id": 2, "name": "Dr. Sharma", "relation": "Doctor", "script": "This is Dr. Sharma's clinic. Your medical reports are ready for collection, please call back tomorrow.", "gender": "Male", "audio_bytes": None},
+        {"id": 3, "name": "Kriti", "relation": "Sister", "script": "Hey! I am reached the restaurant already, where are you stuck? Hurry up, I'm ordering food.", "gender": "Female", "audio_bytes": None},
+        {"id": 4, "name": "Rahul", "relation": "Brother", "script": "Listen, I am standing near the metro gate number 2. Walk fast, I can see your train arrived.", "gender": "Male", "audio_bytes": None}
+    ]
+if "next_id" not in st.session_state: st.session_state.next_id = 5
+if "active_call" not in st.session_state: st.session_state.active_call = None
 
-st.title("🔧 AI-Based Digital Twin for Adaptive Power Amplifier Control")
-st.caption("Digital Twin–Assisted AI-Based Adaptive Power Amplifier for Real-Time Optimization and Predictive Control")
+# App Layout Headings
+st.markdown('<p class="main-title">🛡️ Alert Her</p>', unsafe_content_html=True)
+st.markdown('<p class="tagline">Personalized Safety Navigation & Crowd-Sourced Risk Mitigator</p>', unsafe_content_html=True)
 
-tabs = st.tabs([
-    "🏠 Home",
-    "1️⃣ Data Acquisition",
-    "2️⃣ Digital Twin (AI Model)",
-    "3️⃣ State Estimation (Thermal/Aging)",
-    "4️⃣ AI Optimizer",
-    "5️⃣ Closed-Loop Simulation",
-])
+tab1, tab2, tab3 = st.tabs(["📍 Risk Before You Go", "📉 What-If Simulator", "📞 Pretend Call"])
 
-# ==================================================================
-# TAB: HOME
-# ==================================================================
-with tabs[0]:
-    st.header("Project Overview")
-    st.markdown(
-        """
-        This site implements an **AI-based Digital Twin** for a Class-F⁻¹ RF power
-        amplifier, following the closed-loop architecture shown in the sidebar.
+# ==============================================================================
+# TAB 1: RISK BEFORE YOU GO (WITH AI CHATBOT & FLASHING INSTAGRAM STORIES)
+# ==============================================================================
+with tab1:
+    st.subheader("Predictive Location Screening & Live Threat Feeds")
+    
+    t1_left, t1_right = st.columns([1, 1])
+    
+    with t1_left:
+        st.markdown("### Route Matrix Parameters")
+        zone_options = list(RISK_ZONES.keys()) + ["Other"]
+        eval_zone = st.selectbox("Target Locality Target Node", options=zone_options, key="t1_dest")
+        
+        if eval_zone == "Other":
+            custom_input = st.text_input("Enter Custom Delhi Locality Name:", value="", placeholder="Type area...")
+            target_lookup = custom_input if custom_input else "Other"
+        else:
+            target_lookup = eval_zone
+            
+        t1_time = st.time_input("Target Execution Time", value=datetime.datetime.now().time())
+        t1_wknd = st.checkbox("Weekend Travel Profile Check", value=datetime.date.today().weekday() >= 5)
+        
+        # Sub-Section: AI Assistant Intake Pipeline
+        st.markdown("#### 🤖 AI Safety Assistant Chatbot")
+        st.caption("Submit anonymous dynamic logs here to tag active risks for all platform users instantly.")
+        
+        chat_query = st.chat_input("Log an active hazard (e.g. 'Street lights broken near metro gate')...")
+        if chat_query:
+            st.info(f"**AI Assistant:** Safety broadcast processing node acknowledged. Broadcasting '{chat_query}' tagged to **{target_lookup}** across active network layers.")
+            st.session_state.stories.insert(0, {
+                "location": target_lookup,
+                "time": "Just Now",
+                "issue": chat_query,
+                "avatar": "🔔"
+            })
+            
+    with t1_right:
+        st.markdown("### Risk Engine Analytical Output")
+        res = calculate_risk(target_lookup, t1_time.hour, t1_wknd)
+        
+        badge_style = f"badge-{res['level'].lower()}"
+        st.markdown(f'<div class="risk-badge {badge_style}">{res["level"]} Risk State (Score: {res["score"]}/100)</div>', unsafe_content_html=True)
+        
+        st.markdown("**Core Contributing Safety Vectors:**")
+        for r in res["reasons"]:
+            st.markdown(f"- {r}")
+            
+        if target_lookup in RISK_ZONES:
+            lat, lon = RISK_ZONES[target_lookup]["lat"], RISK_ZONES[target_lookup]["lon"]
+            m = folium.Map(location=[lat, lon], zoom_start=14)
+            folium.Marker([lat, lon], popup=f"{target_lookup}: Tier Risk Eval").add_to(m)
+            st_folium(m, height=220, width=500, key="t1_map_vector")
 
-        Because this project was built remotely without lab/RF hardware access,
-        all data below is **simulated** from a memory-polynomial reference model
-        (a standard PA-modeling equation), used as a stand-in for real measurement
-        data. Every model shown here is **actually trained live** when you press
-        the buttons — nothing is pre-baked or fake.
+    # Interactive Crowdsourced Visual Feed Section (Instagram Stories Emulation Layout)
+    st.markdown("---")
+    st.markdown("### 📸 Live Crowdsourced Safety Stories")
+    st.caption("Flashing indicator matrices mark local conditions flagged by recent users within the network framework. Click to display detail overlays.")
+    
+    story_cols = st.columns(max(len(st.session_state.stories), 1))
+    for idx, story in enumerate(st.session_state.stories):
+        with story_cols[idx % len(story_cols)]:
+            st.markdown(f"""
+            <div class="story-container">
+                <div class="story-ring"><span style="font-size:2rem;">{story['avatar']}</span></div>
+                <span class="story-tag">🚨 {story['location']}</span>
+                <span style="font-size:0.75rem; color:#a0aec0;">{story['time']}</span>
+            </div>
+            """, unsafe_content_html=True)
+            if st.button("Review Update Log", key=f"story_btn_{idx}", use_container_width=True):
+                st.warning(f"**Live Incident Vector [{story['location']} - {story['time']}]:** {story['issue']}")
 
-        **How to use this site:** go through the tabs in order, 1 → 5. Each block
-        needs the previous one to have been run at least once.
-        """
-    )
-    st.subheader("Governing equation being modeled")
-    st.latex(r"y(n) = F(x(n), x(n-1), ..., x(n-M), V_{GS}, V_{DS}, T_j, \theta_d) + \varepsilon(n)")
+    st.markdown('<p class="academic-disclaimer">Disclaimer: The safety score and risk index computed by this application are derived strictly from historical crime metrics, geographical reporting trends, and crowd-sourced inputs. They do not constitute personalized security guarantees or reflect live real-time crime tracking.</p>', unsafe_content_html=True)
 
-# ==================================================================
-# TAB 1: DATA ACQUISITION  (Block 0)
-# ==================================================================
-with tabs[1]:
-    st.header("Block 1 — Physical PA (simulated) + Sensors + Data Acquisition")
-    st.markdown("Generates simulated PA input/output signal data, bias voltages, and junction temperature — standing in for real sensor measurements.")
-
-    n_samples = st.slider("Number of samples", 1000, 10000, 6000, step=500)
-
-    if st.button("▶ Generate Data", type="primary"):
-        with st.spinner("Simulating PA and sensor readings..."):
-            st.session_state.data = pc.generate_pa_data(n_samples=n_samples)
-        st.success(f"Generated {n_samples} samples.")
-
-    if st.session_state.data is not None:
-        d = st.session_state.data
-        col1, col2 = st.columns(2)
-        with col1:
-            fig, ax = plt.subplots(figsize=(5, 3))
-            ax.plot(d["x"][:200], label="Input x(n)")
-            ax.plot(d["y"][:200], label="Output y(n)", alpha=0.8)
-            ax.set_xlabel("Sample index"); ax.legend(); ax.set_title("PA Input vs Output (sample)")
-            st.pyplot(fig)
-        with col2:
-            fig, ax = plt.subplots(figsize=(5, 3))
-            ax.plot(d["Tj"][:500], color="tomato")
-            ax.set_xlabel("Sample index"); ax.set_ylabel("Junction Temp (°C)")
-            ax.set_title("Simulated Thermal Drift")
-            st.pyplot(fig)
-        st.dataframe(
-            {"x(n)": d["x"][:10], "Vgs": d["Vgs"][:10], "Vds": d["Vds"][:10],
-             "Tj": d["Tj"][:10], "y(n)": d["y"][:10]}
-        )
-
-# ==================================================================
-# TAB 2: DIGITAL TWIN  (Block 1+2)
-# ==================================================================
-with tabs[2]:
-    st.header("Block 2 — Digital Twin Engine (Neural Network Behavioral Model)")
-    st.markdown("Trains a neural network to learn the PA's nonlinear input→output mapping. The physics slider adds a smoothness constraint approximating a physics-informed loss term.")
-
-    physics_weight = st.slider("Physics-informed weight (λ_physics)", 0.0, 1.0, 0.5, step=0.1)
-
-    if st.session_state.data is None:
-        st.warning("⬅ Run Block 1 (Data Acquisition) first.")
-    else:
-        if st.button("▶ Train Digital Twin", type="primary"):
-            with st.spinner("Training neural network..."):
-                st.session_state.twin = pc.train_digital_twin(st.session_state.data, physics_weight)
-            st.success("Digital Twin trained.")
-
-        if st.session_state.twin is not None:
-            t = st.session_state.twin
-            c1, c2 = st.columns(2)
-            c1.metric("Test NMSE", f"{t['nmse_db']:.2f} dB")
-            c2.metric("Test MSE", f"{t['mse']:.5f}")
-
-            fig, ax = plt.subplots(figsize=(5, 4))
-            ax.scatter(t["y_test"], t["y_pred"], s=6, alpha=0.4)
-            lims = [min(t["y_test"].min(), t["y_pred"].min()), max(t["y_test"].max(), t["y_pred"].max())]
-            ax.plot(lims, lims, "r--")
-            ax.set_xlabel("Actual"); ax.set_ylabel("Predicted")
-            ax.set_title("Digital Twin: Predicted vs Actual")
-            st.pyplot(fig)
-
-            fig2, ax2 = plt.subplots(figsize=(5, 3))
-            ax2.plot(t["loss_curve"], color="green")
-            ax2.set_xlabel("Training iteration"); ax2.set_ylabel("Loss")
-            ax2.set_title("Training Convergence")
-            st.pyplot(fig2)
-
-# ==================================================================
-# TAB 3: STATE ESTIMATION  (Block 3)
-# ==================================================================
-with tabs[3]:
-    st.header("Block 3 — State Estimation: Thermal / Aging Drift Prediction")
-    st.markdown("Predicts future junction temperature from a short window of past readings (sequence prediction).")
-
-    if st.session_state.data is None:
-        st.warning("⬅ Run Block 1 (Data Acquisition) first.")
-    else:
-        if st.button("▶ Train Thermal Predictor", type="primary"):
-            with st.spinner("Training thermal/aging predictor..."):
-                st.session_state.thermal = pc.train_thermal_predictor(st.session_state.data)
-            st.success("Thermal predictor trained.")
-
-        if st.session_state.thermal is not None:
-            th = st.session_state.thermal
-            st.metric("Prediction MSE", f"{th['mse']:.4f} °C²")
-
-            fig, ax = plt.subplots(figsize=(7, 3.5))
-            order = np.argsort(np.arange(len(th["y_test"])))
-            ax.plot(th["y_test"][:150], label="Actual Tj")
-            ax.plot(th["y_pred"][:150], label="Predicted Tj", linestyle="--")
-            ax.set_xlabel("Sample"); ax.set_ylabel("Temperature (°C)")
-            ax.legend(); ax.set_title("Thermal Drift: Predicted vs Actual")
-            st.pyplot(fig)
-
-# ==================================================================
-# TAB 4: AI OPTIMIZER  (Block 4)
-# ==================================================================
-with tabs[4]:
-    st.header("Block 4 — AI Engine: Bayesian Multi-Objective Optimizer")
-    st.markdown("Searches for the bias point (Vgs, Vds) that maximizes an efficiency proxy while minimizing a distortion proxy, using the trained Digital Twin as a fast virtual PA.")
-
-    n_calls = st.slider("Optimization iterations", 10, 40, 20, step=5)
-
-    if st.session_state.twin is None:
-        st.warning("⬅ Run Block 2 (Digital Twin) first.")
-    else:
-        if st.button("▶ Run Optimizer", type="primary"):
-            with st.spinner("Running Bayesian optimization..."):
-                st.session_state.opt = pc.bayesian_optimize_bias(
-                    st.session_state.twin, st.session_state.data, n_calls=n_calls
-                )
-            st.success("Optimization complete.")
-
-        if st.session_state.opt is not None:
-            o = st.session_state.opt
-            c1, c2, c3 = st.columns(3)
-            c1.metric("Best Vgs", f"{o['best_Vgs']:.3f} V")
-            c2.metric("Best Vds", f"{o['best_Vds']:.3f} V")
-            c3.metric("Best Score", f"{o['best_score']:.4f}")
-
-            fig, ax = plt.subplots(figsize=(6, 3.5))
-            running_best = np.maximum.accumulate(o["history"])
-            ax.plot(o["history"], "o-", alpha=0.4, label="Trial score")
-            ax.plot(running_best, "r-", linewidth=2, label="Best so far")
-            ax.set_xlabel("Iteration"); ax.set_ylabel("Score (efficiency − distortion)")
-            ax.legend(); ax.set_title("Bayesian Optimization Progress")
-            st.pyplot(fig)
-
-# ==================================================================
-# TAB 5: CLOSED LOOP  (Block 5)
-# ==================================================================
-with tabs[5]:
-    st.header("Block 5 — Closed-Loop Adaptive Control (everything connected)")
-    st.markdown("Runs the full loop: Digital Twin predicts output → optimized bias applied → thermal model predicts next state → repeat.")
-
-    steps = st.slider("Simulation steps", 20, 150, 60, step=10)
-
-    if st.session_state.twin is None or st.session_state.thermal is None or st.session_state.opt is None:
-        st.warning("⬅ Run Blocks 2, 3, and 4 first — this block connects all of them.")
-    else:
-        if st.button("▶ Run Closed-Loop Simulation", type="primary"):
-            with st.spinner("Running closed-loop simulation..."):
-                st.session_state.loop = pc.run_closed_loop(
-                    st.session_state.twin, st.session_state.thermal,
-                    st.session_state.opt, st.session_state.data, steps=steps
-                )
-            st.success("Closed-loop simulation complete.")
-
-        if st.session_state.loop is not None:
-            lp = st.session_state.loop
-            st.markdown(f"Running at optimized bias: **Vgs = {lp['Vgs']:.3f} V, Vds = {lp['Vds']:.3f} V**")
-
-            fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
-            ax1.plot(lp["outputs"], color="steelblue")
-            ax1.set_ylabel("PA Output (predicted)")
-            ax1.set_title("Closed-Loop Simulation Over Time")
-
-            ax2.plot(lp["temps"], color="tomato")
-            ax2.set_ylabel("Junction Temp (°C)")
-            ax2.set_xlabel("Time step")
-            st.pyplot(fig)
-
-            st.success("✅ Full pipeline connected: Data → Digital Twin → Optimizer → Control → back to PA.")
+# ==============================================================================
+# TAB 2: WHAT-IF SIMULATOR
+# ==============================================================================
+with tab2:
+    st.subheader("Dynamic Temporal Simulation Sandbox")
+    
+    sim_zone = st.selectbox("Select Target Simulation Zone Node", options=list(RISK_ZONES.keys()), key="t2_dest")
+    sim_wknd = st.checkbox("Simulate Target Weekend Matrix Alterations", value=False, key="t2_wknd")
+    
+    sim_hour = st.slider("Vary Simulation Execution Hour (24h format)", min_value=0, max_value=23, value=datetime.datetime.now().hour)
+    
+    live_res = calculate_risk(sim_zone, sim_hour, sim_wknd)
+    live_badge = f"badge-{live_res['level'].lower()}"
