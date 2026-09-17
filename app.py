@@ -311,12 +311,13 @@ with tab1:
         with blank_cols:
             st.caption("💡 No Incidents Flagged: The crowdsourced story feed layer is currently empty. Use the Chatbot layout on the left column to log an issue and initiate your location's first visual safety indicator ring token.")
 
-    with st.expander("👤 User Safety Profile & Archived Stories Locker"):
+        with st.expander("👤 User Safety Profile & Archived Stories Locker"):
         st.markdown("#### Your Saved / Historical Archive Registry")
         st.caption("Contains citizen safety stories that have passed the 48-hour live expiration threshold, or were manually saved by your session profile framework.")
-        
+
         if archived_profile_stories:
             arch_cols = st.columns(min(len(archived_profile_stories), 6))
+
             for a_idx, a_story in enumerate(archived_profile_stories):
                 with arch_cols[a_idx % 6]:
                     st.markdown(f"""
@@ -326,19 +327,27 @@ with tab1:
                         <div style="font-size:0.75rem; color:#718096;">Archived Logs</div>
                     </div>
                     """, unsafe_allow_html=True)
-                    
-                                        with st.popover("Open Logs", key=f"pop_arch_{a_story.get('id', a_idx)}", use_container_width=True):
+
+                    with st.popover(
+                        "Open Logs",
+                        key=f"pop_arch_{a_story.get('id', a_idx)}",
+                        use_container_width=True
+                    ):
                         st.write(f"Historical Target Locality: {a_story.get('location', 'General Delhi')}")
                         st.write(f"Logged Anomaly Condition: {a_story.get('issue', '')}")
                         st.write(f"Stored Public Alert Quote: {a_story.get('quote', '')}")
 
-                        if st.button("Unarchive / Bring Live", key=f"unarch_{a_story.get('id', a_idx)}"):
+                        if st.button(
+                            "Unarchive / Bring Live",
+                            key=f"unarch_{a_story.get('id', a_idx)}"
+                        ):
                             for s_item in st.session_state.stories:
                                 if s_item.get("id") == a_story.get("id"):
                                     s_item["archived"] = False
                                     s_item["timestamp"] = datetime.datetime.now()
 
                             st.rerun()
+
         else:
             st.info("Your historical personal archive database node profile log contains zero saved entries.")
 
