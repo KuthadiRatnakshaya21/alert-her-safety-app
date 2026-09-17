@@ -10,7 +10,8 @@ Run locally with:   streamlit run app.py
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
-import pa_core as pc
+from risk_engine import RISK_ZONES, calculate_risk
+
 
 st.set_page_config(page_title="AI Digital Twin — Power Amplifier", layout="wide")
 
